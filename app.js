@@ -29,7 +29,24 @@ const storage = multer.diskStorage({
     cb(null, Date.now() + path.extname(file.originalname)); // Ej: 1620000001.jpg
   }
 });
-const upload = multer({ storage });
+
+const upload = multer({ 
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error('Solo se permiten imágenes (jpg, jpeg, png, gif)'));
+  }
+});
+
+// Configurar EJS como motor de plantillas
+app.set('view engine', 'ejs');          // 👈 Establece EJS como motor
+app.set('views', path.join(__dirname, 'views'));
 
 // Middleware para servir archivos estáticos y procesar formularios
 app.use(express.static(path.join(__dirname, 'public')));
@@ -95,7 +112,7 @@ app.get('/', async (req, res) => {
 
 // Ruta de login
 app.get('/login', (req, res) => {
-  res.render('login');
+  res.render('login', { message: req.session.messages ? req.session.messages[0] : null });
 });
 
 // Procesar login
@@ -125,6 +142,11 @@ app.get('/admin', ensureAdmin, async (req, res) => {
 // Añadir producto (protegido)
 app.post('/admin/add-product', ensureAdmin, upload.single('image'), async (req, res) => {
   const { name, stock } = req.body;
+  
+  if (!name || !stock || !req.file) {
+    return res.status(400).send('Todos los campos son obligatorios');
+  }
+
   const imagePath = `/uploads/${req.file.filename}`;
   
   try {
@@ -132,6 +154,46 @@ app.post('/admin/add-product', ensureAdmin, upload.single('image'), async (req, 
     res.redirect('/admin');
   } catch (err) {
     console.error('Error al añadir producto:', err);
+    res.status(500).send('Error interno');
+  }
+});
+
+// Editar producto (protegido)
+app.post('/admin/edit-product/:id', ensureAdmin, upload.single('image'), async (req, res) => {
+  const { name, stock } = req.body;
+  const productId = req.params.id;
+  
+  if (!name || !stock) {
+    return res.status(400).send('Todos los campos son obligatorios');
+  }
+
+  let imagePath = req.body.oldImagePath; // Mantener imagen existente si no se carga una nueva
+
+  if (req.file) {
+    imagePath = `/uploads/${req.file.filename}`;
+  }
+
+  try {
+    await pool.query(
+      'UPDATE products SET name = ?, stock = ?, image_path = ? WHERE id = ?',
+      [name, stock, imagePath, productId]
+    );
+    res.redirect('/admin');
+  } catch (err) {
+    console.error('Error al editar producto:', err);
+    res.status(500).send('Error interno');
+  }
+});
+
+// Eliminar producto (protegido)
+app.post('/admin/delete-product/:id', ensureAdmin, async (req, res) => {
+  const productId = req.params.id;
+
+  try {
+    await pool.query('DELETE FROM products WHERE id = ?', [productId]);
+    res.redirect('/admin');
+  } catch (err) {
+    console.error('Error al eliminar producto:', err);
     res.status(500).send('Error interno');
   }
 });
