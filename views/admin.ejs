@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Administrar Stock</title>
+</head>
+<body>
+  <h1>Panel de Administración</h1>
+  <nav>
+    <a href="/">Inicio</a>
+    <a href="/logout">Cerrar sesión</a>
+  </nav>
+
+  <h2>Añadir Producto</h2>
+  <form action="/admin/add-product" method="POST" enctype="multipart/form-data">
+    <input type="text" name="name" placeholder="Nombre del producto" required>
+    <input type="number" name="stock" placeholder="Stock" required>
+    <input type="file" name="image" required>
+    <button type="submit">Guardar</button>
+  </form>
+
+  <h2>Productos Actuales</h2>
+  <div>
+    <% products.forEach(product => { %>
+      <div style="border:1px solid #ccc; margin:10px; padding:10px;">
+        <img src="<%= product.image_path %>" width="100">
+        <p><strong><%= product.name %></strong> - Stock: <%= product.stock %></p>
+        <button onclick="document.getElementById('edit-<%= product.id %>').style.display='block'">Editar</button>
+        <form action="/admin/delete-product/<%= product.id %>" method="POST">
+          <button type="submit">Eliminar</button>
+        </form>
+
+        <!-- Formulario de edición -->
+        <div id="edit-<%= product.id %>" style="display:none; margin-top:10px;">
+          <form action="/admin/edit-product/<%= product.id %>" method="POST" enctype="multipart/form-data">
+            <input type="text" name="name" value="<%= product.name %>" required>
+            <input type="number" name="stock" value="<%= product.stock %>" required>
+            <input type="file" name="image">
+            <button type="submit">Actualizar</button>
+          </form>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+</body>
+</html>

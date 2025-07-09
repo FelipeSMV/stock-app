@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stock App</title>
+</head>
+<body>
+  <h1>Bienvenido, <%= user.username %></h1>
+  <nav>
+    <a href="/">Inicio</a>
+    <a href="/logout">Cerrar sesión</a>
+  </nav>
+
+  <h2>Productos Disponibles</h2>
+  <div>
+    <% products.forEach(product => { %>
+      <div>
+        <img src="<%= product.image_path %>" width="100">
+        <p><%= product.name %> - Stock: <%= product.stock %></p>
+      </div>
+    <% }) %>
+  </div>
+</body>
+</html>
