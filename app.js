@@ -52,7 +52,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Middleware para servir archivos estáticos y procesar formularios
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json()));
+app.use(express.json());
 
 // Configurar sesión
 app.use(session({
