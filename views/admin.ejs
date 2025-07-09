@@ -1,45 +1,177 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <title>Administrar Stock</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel de Administración - Stock App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #333;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header a {
+      color: white;
+      text-decoration: none;
+      margin-left: 15px;
+    }
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    .add-form {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .add-form input, .add-form button {
+      margin: 5px 0;
+      padding: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    .product-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 15px;
+      position: relative;
+    }
+    .product-card img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 5px;
+    }
+    .product-name {
+      font-weight: bold;
+      margin: 10px 0 5px;
+    }
+    .stock {
+      color: #555;
+    }
+    .actions {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      color: white;
+      font-size: 14px;
+    }
+    .btn-edit {
+      background: #007bff;
+    }
+    .btn-delete {
+      background: #dc3545;
+    }
+    .edit-form {
+      display: none;
+      margin-top: 10px;
+    }
+    .edit-form input, .edit-form button {
+      margin: 5px 0;
+      padding: 8px;
+      width: 100%;
+    }
+    .error-message {
+      background: #ffe0e0;
+      color: #d32f2f;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-  <h1>Panel de Administración</h1>
-  <nav>
-    <a href="/">Inicio</a>
-    <a href="/logout">Cerrar sesión</a>
-  </nav>
+  <!-- Barra de navegación -->
+  <header>
+    <div>
+      <a href="/">Inicio</a>
+      <a href="/logout">Cerrar sesión</a>
+    </div>
+    <span>Bienvenido, <%= user.username %></span>
+  </header>
 
-  <h2>Añadir Producto</h2>
-  <form action="/admin/add-product" method="POST" enctype="multipart/form-data">
-    <input type="text" name="name" placeholder="Nombre del producto" required>
-    <input type="number" name="stock" placeholder="Stock" required>
-    <input type="file" name="image" required>
-    <button type="submit">Guardar</button>
-  </form>
+  <!-- Contenedor principal -->
+  <div class="container">
+    <h1>Panel de Administración</h1>
 
-  <h2>Productos Actuales</h2>
-  <div>
-    <% products.forEach(product => { %>
-      <div style="border:1px solid #ccc; margin:10px; padding:10px;">
-        <img src="<%= product.image_path %>" width="100">
-        <p><strong><%= product.name %></strong> - Stock: <%= product.stock %></p>
-        <button onclick="document.getElementById('edit-<%= product.id %>').style.display='block'">Editar</button>
-        <form action="/admin/delete-product/<%= product.id %>" method="POST">
-          <button type="submit">Eliminar</button>
-        </form>
+    <!-- Formulario para añadir producto -->
+    <div class="add-form">
+      <h2>Añadir Producto</h2>
+      <form action="/admin/add-product" method="POST" enctype="multipart/form-data">
+        <input type="text" name="name" placeholder="Nombre del producto" required>
+        <input type="number" name="stock" placeholder="Stock" required>
+        <input type="file" name="image" required>
+        <button type="submit" class="btn btn-edit">Guardar</button>
+      </form>
+    </div>
 
-        <!-- Formulario de edición -->
-        <div id="edit-<%= product.id %>" style="display:none; margin-top:10px;">
-          <form action="/admin/edit-product/<%= product.id %>" method="POST" enctype="multipart/form-data">
-            <input type="text" name="name" value="<%= product.name %>" required>
-            <input type="number" name="stock" value="<%= product.stock %>" required>
-            <input type="file" name="image">
-            <button type="submit">Actualizar</button>
-          </form>
-        </div>
+    <!-- Listado de productos -->
+    <h2>Productos Actuales</h2>
+    <% if (products.length === 0) { %>
+      <p>No hay productos registrados.</p>
+    <% } else { %>
+      <div class="product-grid">
+        <% products.forEach(product => { %>
+          <div class="product-card">
+            <img src="<%= product.image_path %>" alt="<%= product.name %>">
+            <div class="product-name"><%= product.name %></div>
+            <div class="stock">Stock: <%= product.stock %></div>
+            <div class="actions">
+              <button onclick="toggleEditForm(<%= product.id %>)" class="btn btn-edit">Editar</button>
+              <form action="/admin/delete-product/<%= product.id %>" method="POST">
+                <button type="submit" class="btn btn-delete">Eliminar</button>
+              </form>
+            </div>
+
+            <!-- Formulario de edición -->
+            <div id="edit-form-<%= product.id %>" class="edit-form">
+              <form action="/admin/edit-product/<%= product.id %>" method="POST" enctype="multipart/form-data">
+                <input type="text" name="name" value="<%= product.name %>" required>
+                <input type="number" name="stock" value="<%= product.stock %>" required>
+                <input type="file" name="image">
+                <button type="submit" class="btn btn-edit">Actualizar</button>
+              </form>
+            </div>
+          </div>
+        <% }) %>
       </div>
-    <% }) %>
+    <% } %>
   </div>
+
+  <!-- Script para mostrar/ocultar formulario de edición -->
+  <script>
+    function toggleEditForm(id) {
+      const form = document.getElementById('edit-form-' + id);
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+  </script>
 </body>
 </html>
