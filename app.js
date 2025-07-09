@@ -17,3 +17,8 @@ const upload = multer({ storage });
 
 // Middleware para servir archivos estáticos
 app.use(express.static('public'));
+
+function ensureAdmin(req, res, next) {
+  if (req.isAuthenticated() && req.user.role === 'admin') return next();
+  res.redirect('/');
+}
