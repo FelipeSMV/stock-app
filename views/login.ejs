@@ -49,7 +49,7 @@
       border-radius: 5px;
       margin-bottom: 15px;
       text-align: center;
-      display: <%= message ? 'block' : 'none' %>;
+      display: <%= error ? 'block' : 'none' %>;
     }
     .submit-button {
       width: 100%;
@@ -79,8 +79,8 @@
     <h2>Iniciar Sesión</h2>
     
     <!-- Mensaje de error -->
-    <% if (message) { %>
-      <div class="error-message"><%= message %></div>
+    <% if (error) { %>
+      <div class="error-message"><%= error %></div>
     <% } %>
     
     <!-- Formulario de login -->

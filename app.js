@@ -8,6 +8,7 @@ const LocalStrategy = require('passport-local').Strategy;
 const mysql = require('mysql2');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
+const flash = require('connect-flash');
 
 // Configurar conexión a MariaDB
 const pool = mysql.createPool({
@@ -51,7 +52,7 @@ app.set('views', path.join(__dirname, 'views'));
 // Middleware para servir archivos estáticos y procesar formularios
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.json()));
 
 // Configurar sesión
 app.use(session({
@@ -59,6 +60,17 @@ app.use(session({
   resave: false,
   saveUninitialized: false
 }));
+
+// Configurar flash messages
+app.use(flash());
+
+// Middleware para pasar mensajes a las vistas
+app.use((req, res, next) => {
+  res.locals.success_msg = req.flash('success_msg');
+  res.locals.error_msg = req.flash('error_msg');
+  res.locals.error = req.flash('error');
+  next();
+});
 
 // Inicializar Passport
 app.use(passport.initialize());
@@ -93,14 +105,39 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
+// Middleware para proteger rutas (solo usuarios autenticados)
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) return next();
+  res.redirect('/login');
+}
+
 // Middleware para proteger rutas de administrador
 function ensureAdmin(req, res, next) {
   if (req.isAuthenticated() && req.user.role === 'admin') return next();
   res.redirect('/');
 }
 
-// Ruta principal: Mostrar productos
-app.get('/', async (req, res) => {
+// Ruta de login (pública)
+app.get('/login', (req, res) => {
+  const message = req.session.messages ? req.session.messages[0] : null;
+  res.render('login', { message });
+});
+
+// Procesar login (pública)
+app.post('/login', passport.authenticate('local', {
+  successRedirect: '/',
+  failureRedirect: '/login',
+  failureFlash: true
+}));
+
+// Cerrar sesión (pública)
+app.get('/logout', (req, res) => {
+  req.logout();
+  res.redirect('/login');
+});
+
+// Ruta principal: Mostrar productos (protegida)
+app.get('/', ensureAuthenticated, async (req, res) => {
   try {
     const [products] = await pool.query('SELECT * FROM products');
     res.render('index', { products, user: req.user });
@@ -108,24 +145,6 @@ app.get('/', async (req, res) => {
     console.error('Error al obtener productos:', err);
     res.status(500).send('Error interno');
   }
-});
-
-// Ruta de login
-app.get('/login', (req, res) => {
-  res.render('login', { message: req.session.messages ? req.session.messages[0] : null });
-});
-
-// Procesar login
-app.post('/login', passport.authenticate('local', {
-  successRedirect: '/',
-  failureRedirect: '/login',
-  failureFlash: true
-}));
-
-// Cerrar sesión
-app.get('/logout', (req, res) => {
-  req.logout();
-  res.redirect('/');
 });
 
 // Ruta de administración (protegida)
@@ -144,7 +163,8 @@ app.post('/admin/add-product', ensureAdmin, upload.single('image'), async (req, 
   const { name, stock } = req.body;
   
   if (!name || !stock || !req.file) {
-    return res.status(400).send('Todos los campos son obligatorios');
+    req.flash('error_msg', 'Todos los campos son obligatorios');
+    return res.redirect('/admin');
   }
 
   const imagePath = `/uploads/${req.file.filename}`;
@@ -154,7 +174,8 @@ app.post('/admin/add-product', ensureAdmin, upload.single('image'), async (req, 
     res.redirect('/admin');
   } catch (err) {
     console.error('Error al añadir producto:', err);
-    res.status(500).send('Error interno');
+    req.flash('error_msg', 'Error al guardar el producto');
+    res.redirect('/admin');
   }
 });
 
@@ -164,7 +185,8 @@ app.post('/admin/edit-product/:id', ensureAdmin, upload.single('image'), async (
   const productId = req.params.id;
   
   if (!name || !stock) {
-    return res.status(400).send('Todos los campos son obligatorios');
+    req.flash('error_msg', 'Todos los campos son obligatorios');
+    return res.redirect('/admin');
   }
 
   let imagePath = req.body.oldImagePath; // Mantener imagen existente si no se carga una nueva
@@ -181,7 +203,8 @@ app.post('/admin/edit-product/:id', ensureAdmin, upload.single('image'), async (
     res.redirect('/admin');
   } catch (err) {
     console.error('Error al editar producto:', err);
-    res.status(500).send('Error interno');
+    req.flash('error_msg', 'Error al actualizar el producto');
+    res.redirect('/admin');
   }
 });
 
@@ -194,7 +217,8 @@ app.post('/admin/delete-product/:id', ensureAdmin, async (req, res) => {
     res.redirect('/admin');
   } catch (err) {
     console.error('Error al eliminar producto:', err);
-    res.status(500).send('Error interno');
+    req.flash('error_msg', 'Error al eliminar el producto');
+    res.redirect('/admin');
   }
 });
 
