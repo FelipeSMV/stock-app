@@ -5,101 +5,99 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Iniciar Sesión - Stock App</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
+    /* Estilos ya definidos anteriormente */
+    .tab {
       display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .login-container {
-      background: white;
-      padding: 30px 40px;
-      border-radius: 8px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-      width: 100%;
-      max-width: 400px;
-    }
-    .login-container h2 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #333;
-    }
-    .form-group {
       margin-bottom: 15px;
     }
-    .form-group label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    .form-group input {
-      width: 100%;
+    .tab button {
+      flex: 1;
       padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-    .error-message {
-      background: #ffe0e0;
-      color: #d32f2f;
-      padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 15px;
-      text-align: center;
-      display: <%= error ? 'block' : 'none' %>;
-    }
-    .submit-button {
-      width: 100%;
-      padding: 12px;
-      background: #333;
-      color: white;
+      background: #eee;
       border: none;
-      border-radius: 5px;
-      font-size: 16px;
       cursor: pointer;
     }
-    .submit-button:hover {
-      background: #555;
+    .tab button.active {
+      background: #333;
+      color: white;
     }
-    .back-link {
-      text-align: center;
-      margin-top: 15px;
+    .form-section {
+      display: none;
     }
-    .back-link a {
-      color: #333;
-      text-decoration: none;
+    .form-section.active {
+      display: block;
     }
   </style>
 </head>
 <body>
   <div class="login-container">
-    <h2>Iniciar Sesión</h2>
-    
+    <!-- Tabs para Login y Registro -->
+    <div class="tab">
+      <button class="active" onclick="showLogin()">Iniciar Sesión</button>
+      <button onclick="showRegister()">Registrarse</button>
+    </div>
+
     <!-- Mensaje de error -->
     <% if (error) { %>
       <div class="error-message"><%= error %></div>
     <% } %>
-    
+
     <!-- Formulario de login -->
-    <form action="/login" method="POST">
-      <div class="form-group">
-        <label for="username">Usuario</label>
-        <input type="text" id="username" name="username" placeholder="Tu usuario" required>
-      </div>
-      <div class="form-group">
-        <label for="password">Contraseña</label>
-        <input type="password" id="password" name="password" placeholder="Tu contraseña" required>
-      </div>
-      <button type="submit" class="submit-button">Entrar</button>
-    </form>
-    
+    <div id="login-form" class="form-section active">
+      <h2>Iniciar Sesión</h2>
+      <form action="/login" method="POST">
+        <div class="form-group">
+          <label for="username">Usuario</label>
+          <input type="text" id="username" name="username" placeholder="Tu usuario" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" name="password" placeholder="Tu contraseña" required>
+        </div>
+        <button type="submit" class="submit-button">Entrar</button>
+      </form>
+    </div>
+
+    <!-- Formulario de registro -->
+    <div id="register-form" class="form-section">
+      <h2>Crear Cuenta</h2>
+      <form action="/register" method="POST">
+        <div class="form-group">
+          <label for="new-username">Usuario</label>
+          <input type="text" id="new-username" name="username" placeholder="Nuevo usuario" required>
+        </div>
+        <div class="form-group">
+          <label for="new-password">Contraseña</label>
+          <input type="password" id="new-password" name="password" placeholder="Contraseña" required>
+        </div>
+        <div class="form-group">
+          <label for="confirm-password">Confirmar Contraseña</label>
+          <input type="password" id="confirm-password" name="confirmPassword" placeholder="Confirmar contraseña" required>
+        </div>
+        <button type="submit" class="submit-button">Registrarse</button>
+      </form>
+    </div>
+
     <!-- Volver al inicio -->
     <div class="back-link">
       <a href="/">← Volver al inicio</a>
     </div>
   </div>
+
+  <script>
+    function showLogin() {
+      document.getElementById('login-form').classList.add('active');
+      document.getElementById('register-form').classList.remove('active');
+      document.querySelectorAll('.tab button')[0].classList.add('active');
+      document.querySelectorAll('.tab button')[1].classList.remove('active');
+    }
+
+    function showRegister() {
+      document.getElementById('login-form').classList.remove('active');
+      document.getElementById('register-form').classList.add('active');
+      document.querySelectorAll('.tab button')[0].classList.remove('active');
+      document.querySelectorAll('.tab button')[1].classList.add('active');
+    }
+  </script>
 </body>
 </html>

@@ -136,6 +136,44 @@ app.get('/logout', (req, res) => {
   res.redirect('/login');
 });
 
+// Ruta de registro (pública)
+app.post('/register', async (req, res) => {
+  const { username, password, confirmPassword } = req.body;
+
+  if (!username || !password || !confirmPassword) {
+    req.flash('error_msg', 'Todos los campos son obligatorios');
+    return res.redirect('/login');
+  }
+
+  if (password.length < 6) {
+    req.flash('error_msg', 'La contraseña debe tener al menos 6 caracteres');
+    return res.redirect('/login');
+  }
+
+  if (password !== confirmPassword) {
+    req.flash('error_msg', 'Las contraseñas no coinciden');
+    return res.redirect('/login');
+  }
+
+  try {
+    const [rows] = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+    if (rows.length > 0) {
+      req.flash('error_msg', 'El nombre de usuario ya está en uso');
+      return res.redirect('/login');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await pool.query('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword]);
+
+    req.flash('success_msg', 'Registro exitoso. ¡Ahora puedes iniciar sesión!');
+    res.redirect('/login');
+  } catch (err) {
+    console.error('Error al registrar usuario:', err);
+    req.flash('error_msg', 'Error al registrar usuario');
+    res.redirect('/login');
+  }
+});
+
 // Ruta principal: Mostrar productos (protegida)
 app.get('/', ensureAuthenticated, async (req, res) => {
   try {
